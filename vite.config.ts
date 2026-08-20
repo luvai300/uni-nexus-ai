@@ -1,14 +1,24 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import fs from "fs";
 import path from "path";
 import checker from "vite-plugin-checker";
-// @ts-expect-error - No type declarations for custom plugin
-import clearLogPlugin from "./dala-internal-vite-clear-log-plugin.js";
 
 import dns from "node:dns";
 
 dns.setDefaultResultOrder("verbatim");
+
+// Load optional local plugin only if present to avoid module-not-found errors on machines
+let clearLogPlugin: any = () => () => {};
+const clearLogPluginPath = path.resolve(__dirname, "dala-internal-vite-clear-log-plugin.js");
+if (fs.existsSync(clearLogPluginPath)) {
+  // dynamically import when present
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - file may be plain JS without types
+  const mod = await import("./dala-internal-vite-clear-log-plugin.js");
+  clearLogPlugin = mod?.default ?? (() => () => {});
+}
 
 // https://vite.dev/config/
 export default defineConfig({
